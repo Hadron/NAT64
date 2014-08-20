@@ -53,8 +53,8 @@ struct session_entry {
 	/** IPv4 version of the connection. */
 	struct ipv4_pair ipv4;
 
-	/** Jiffy (from the epoch) this session should expire in, if still inactive. */
-	unsigned long dying_time;
+	/** Jiffy (from the epoch) this session was last updated/used. */
+	unsigned long update_time;
 
 	/**
 	 * Owner bib of this session. Used for quick access during removal.
@@ -73,13 +73,22 @@ struct session_entry {
 	 */
 	struct list_head expire_list_hook;
 	/**
+	 * Expiration timer who is supposed to delete this session when its death time is reached.
+	 */
+	struct expire_timer *expirer;
+	/**
 	 * Transport protocol of the table this entry is in.
 	 * Used to know which table the session should be removed from when expired.
 	 */
-	l4_protocol l4_proto;
+	const l4_protocol l4_proto;
 
 	/** Current TCP state. Only relevant if l4_proto == L4PROTO_TCP. */
 	u_int8_t state;
+	/**
+	 * A lock for each session, this is used when handling the TCP state. Protects "state".
+	 * Only relevant if l4_proto == L4PROTO_TCP.
+	 */
+	spinlock_t lock;
 
 	/** Appends this entry to the database's IPv6 index. */
 	struct rb_node tree6_hook;
@@ -135,7 +144,7 @@ int sessiondb_init(void);
 void sessiondb_destroy(void);
 
 int sessiondb_clone_config(struct sessiondb_config *clone);
-int sessiondb_set_config(__u32 operation, struct sessiondb_config *new_config);
+int sessiondb_set_config(enum sessiondb_type type, size_t size, void *value);
 
 
 /**

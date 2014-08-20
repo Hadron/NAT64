@@ -1,4 +1,4 @@
-#include "nat64/comm/str_utils.h"
+#include "nat64/usr/str_utils.h"
 #include "nat64/comm/constants.h"
 #include "nat64/usr/types.h"
 #include <string.h>
@@ -10,7 +10,33 @@
 
 #define MAX_PORT 0xFFFF
 
-int str_to_bool(const char *str, bool *bool_out)
+const char *l3proto_to_string(l3_protocol l3_proto)
+{
+	switch (l3_proto) {
+	case L3PROTO_IPV6:
+		return "IPv6";
+	case L3PROTO_IPV4:
+		return "IPv4";
+	}
+
+	return NULL;
+}
+
+const char *l4proto_to_string(l4_protocol l4_proto)
+{
+	switch (l4_proto) {
+	case L4PROTO_TCP:
+		return "TCP";
+	case L4PROTO_UDP:
+		return "UDP";
+	case L4PROTO_ICMP:
+		return "ICMP";
+	}
+
+	return NULL;
+}
+
+int str_to_bool(const char *str, __u8 *bool_out)
 {
 	if (strcasecmp(str, "true") == 0 || strcasecmp(str, "1") == 0
 			|| strcasecmp(str, "yes") == 0 || strcasecmp(str, "on") == 0) {
@@ -30,10 +56,10 @@ int str_to_bool(const char *str, bool *bool_out)
 
 int str_to_u8(const char *str, __u8 *u8_out, __u8 min, __u8 max)
 {
-	__u16 result;
+	__u64 result;
 	int error;
 
-	error = str_to_u16(str, &result, min, max);
+	error = str_to_u64(str, &result, (__u64) min, (__u64) max);
 	if (error)
 		return error; /* Error msg already printed. */
 
@@ -43,32 +69,45 @@ int str_to_u8(const char *str, __u8 *u8_out, __u8 min, __u8 max)
 
 int str_to_u16(const char *str, __u16 *u16_out, __u16 min, __u16 max)
 {
-	long result;
-	char *endptr;
+	__u64 result;
+	int error;
 
-	errno = 0;
-	result = strtol(str, &endptr, 10);
-	if (errno != 0 || str == endptr) {
-		log_err("Cannot parse '%s' as an integer value.", str);
-		return -EINVAL;
-	}
-	if (result < min || max < result) {
-		log_err("'%s' is out of bounds (%u-%u).", str, min, max);
-		return -EINVAL;
-	}
+	error = str_to_u64(str, &result, (__u64) min, (__u64) max);
+	if (error)
+		return error; /* Error msg already printed. */
 
 	*u16_out = result;
 	return 0;
 }
 
+int str_to_u64(const char *str, __u64 *u64_out, __u64 min, __u64 max)
+{
+	__u64 result;
+	char *endptr;
+
+	errno = 0;
+	result = strtoull(str, &endptr, 10);
+	if (errno != 0 || str == endptr) {
+		log_err("Cannot parse '%s' as an integer value.", str);
+		return -EINVAL;
+	}
+	if (result < min || max < result) {
+		log_err("'%s' is out of bounds (%llu-%llu).", str, min, max);
+		return -EINVAL;
+	}
+
+	*u64_out = result;
+	return 0;
+}
+
 #define STR_MAX_LEN 2048
-int str_to_u16_array(const char *str, __u16 **array_out, __u16 *array_len_out)
+int str_to_u16_array(const char *str, __u16 **array_out, size_t *array_len_out)
 {
 	/* strtok corrupts the string, so we'll be using this copy instead. */
 	char str_copy[STR_MAX_LEN];
 	char *token;
 	__u16 *array;
-	__u16 array_len;
+	size_t array_len;
 
 	/* Validate str and copy it to the temp buffer. */
 	if (strlen(str) + 1 > STR_MAX_LEN) {
@@ -91,7 +130,7 @@ int str_to_u16_array(const char *str, __u16 **array_out, __u16 *array_len_out)
 	}
 
 	/* Build the result. */
-	array = malloc(array_len * sizeof(__u16));
+	array = malloc(array_len * sizeof(*array));
 	if (!array) {
 		log_err("Memory allocation failed. Cannot parse the input...");
 		return -ENOMEM;
@@ -260,7 +299,39 @@ int str_to_prefix(const char *str, struct ipv6_prefix *prefix_out)
 	return -EINVAL;
 }
 
-void print_time(__u64 millis)
+static void print_num_csv(__u64 num, char *separator)
+{
+	if (num < 10)
+		printf("0%llu%s", num, separator);
+	else
+		printf("%llu%s", num, separator);
+}
+
+void print_time_csv(__u64 millis)
+{
+	const __u64 MILLIS_PER_SECOND = 1000;
+	const __u64 MILLIS_PER_MIN = 60 * MILLIS_PER_SECOND;
+	const __u64 MILLIS_PER_HOUR = 60 * MILLIS_PER_MIN;
+	__u64 hours;
+	__u64 minutes;
+	__u64 seconds;
+
+	hours = millis / MILLIS_PER_HOUR;
+	millis -= hours * MILLIS_PER_HOUR;
+
+	minutes = millis / MILLIS_PER_MIN;
+	millis -= minutes * MILLIS_PER_MIN;
+
+	seconds = millis / MILLIS_PER_SECOND;
+	millis -= seconds * MILLIS_PER_SECOND;
+
+	print_num_csv(hours, ":");
+	print_num_csv(minutes, ":");
+	print_num_csv(seconds, ".");
+	printf("%llu", millis);
+}
+
+void print_time_friendly(__u64 millis)
 {
 	__u64 seconds;
 	__u64 minutes;

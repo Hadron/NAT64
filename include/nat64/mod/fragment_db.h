@@ -38,8 +38,8 @@
 
 int fragdb_init(void);
 
-int set_fragmentation_config(__u32 operation, struct fragmentation_config *new_config);
-int clone_fragmentation_config(struct fragmentation_config *clone);
+int fragmentdb_set_config(enum fragmentation_type type, size_t size, void *value);
+int fragmentdb_clone_config(struct fragmentation_config *clone);
 
 verdict fragment_arrives(struct sk_buff *skb, struct packet **result);
 

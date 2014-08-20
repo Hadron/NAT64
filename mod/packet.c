@@ -6,6 +6,7 @@
 #include "nat64/mod/types.h"
 #include "nat64/mod/icmp_wrapper.h"
 #include "nat64/mod/stats.h"
+#include "nat64/comm/str_utils.h"
 
 #define MIN_IPV6_HDR_LEN sizeof(struct ipv6hdr)
 #define MIN_IPV4_HDR_LEN sizeof(struct iphdr)

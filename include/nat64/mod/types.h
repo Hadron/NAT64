@@ -137,11 +137,13 @@ void log_tuple(struct tuple *tuple);
  * @param b struct you want to compare to "a".
  * @return (*addr_1) === (*addr_2), with null checks as appropriate.
  */
-bool ipv4_addr_equals(struct in_addr *a, struct in_addr *b);
-bool ipv6_addr_equals(struct in6_addr *a, struct in6_addr *b);
-bool ipv4_tuple_addr_equals(struct ipv4_tuple_address *a, struct ipv4_tuple_address *b);
-bool ipv6_tuple_addr_equals(struct ipv6_tuple_address *a, struct ipv6_tuple_address *b);
-bool ipv6_prefix_equals(struct ipv6_prefix *a, struct ipv6_prefix *b);
+bool ipv4_addr_equals(const struct in_addr *a, const struct in_addr *b);
+bool ipv6_addr_equals(const struct in6_addr *a, const struct in6_addr *b);
+bool ipv4_tuple_addr_equals(const struct ipv4_tuple_address *a,
+		const struct ipv4_tuple_address *b);
+bool ipv6_tuple_addr_equals(const struct ipv6_tuple_address *a,
+		const struct ipv6_tuple_address *b);
+bool ipv6_prefix_equals(const struct ipv6_prefix *a, const struct ipv6_prefix *b);
 /**
  * @}
  */

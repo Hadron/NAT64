@@ -3,7 +3,8 @@
 #include <netdb.h>
 #include <stdio.h>
 
-void print_ipv6_tuple(struct ipv6_tuple_address *tuple, bool numeric_hostname)
+void print_ipv6_tuple(struct ipv6_tuple_address *tuple, bool numeric_hostname, char *separator,
+		__u8 l4_proto)
 {
 	char hostname[NI_MAXHOST], service[NI_MAXSERV];
 	char hostaddr[INET6_ADDRSTRLEN];
@@ -25,15 +26,21 @@ void print_ipv6_tuple(struct ipv6_tuple_address *tuple, bool numeric_hostname)
 		goto print_numeric;
 	}
 
-	printf("%s#%s", hostname, service);
+	/* Verification because ICMP doesn't use numeric ports, so it makes no sense to have a
+	 * translation of the "ICMP id". */
+	if (l4_proto != L4PROTO_ICMP)
+		printf("%s%s%s", hostname, separator, service);
+	else
+		printf("%s%s%u", hostname, separator, tuple->l4_id);
 	return;
 
 print_numeric:
 	inet_ntop(AF_INET6, &tuple->address, hostaddr, sizeof(hostaddr));
-	printf("%s#%u", hostaddr, tuple->l4_id);
+	printf("%s%s%u", hostaddr, separator, tuple->l4_id);
 }
 
-void print_ipv4_tuple(struct ipv4_tuple_address *tuple, bool numeric_hostname)
+void print_ipv4_tuple(struct ipv4_tuple_address *tuple, bool numeric_hostname, char *separator,
+		__u8 l4_proto)
 {
 	char hostname[NI_MAXHOST], service[NI_MAXSERV];
 	char *hostaddr;
@@ -55,10 +62,15 @@ void print_ipv4_tuple(struct ipv4_tuple_address *tuple, bool numeric_hostname)
 		goto print_numeric;
 	}
 
-	printf("%s#%s", hostname, service);
+	/* Verification because ICMP doesn't use numeric ports, so it makes no sense to have a
+	 * translation of the "ICMP id". */
+	if (l4_proto != L4PROTO_ICMP)
+		printf("%s%s%s", hostname, separator, service);
+	else
+		printf("%s%s%u", hostname, separator, tuple->l4_id);
 	return;
 
 print_numeric:
 	hostaddr = inet_ntoa(tuple->address);
-	printf("%s#%u", hostaddr, tuple->l4_id);
+	printf("%s%s%u", hostaddr, separator, tuple->l4_id);
 }

@@ -160,7 +160,7 @@ int pktqueue_add(struct session_entry *session, struct sk_buff *skb)
 	spin_unlock_bh(&packets_lock);
 
 	if (start_timer)
-		mod_timer(&expire_timer, session->dying_time);
+		mod_timer(&expire_timer, session->update_time);
 
 	return 0;
 }
@@ -195,7 +195,7 @@ static void reply_fn(unsigned long param)
 
 	while (!list_empty(&packets)) {
 		node = get_first_pkt();
-		next_expire = node->session->dying_time;
+		next_expire = node->session->update_time;
 
 		if (time_before(jiffies, next_expire)) {
 			start_timer = true;
@@ -261,10 +261,20 @@ int pktqueue_clone_config(struct pktqueue_config *clone)
 	return 0;
 }
 
-int pktqueue_set_config(struct pktqueue_config *new_config)
+int pktqueue_set_config(enum pktqueue_type type, size_t size, void *value)
 {
 	struct pktqueue_config *tmp_config;
 	struct pktqueue_config *old_config;
+
+	if (type != MAX_PKTS) {
+		log_err("Unknown config type for the 'packet queue' module: %u", type);
+		return -EINVAL;
+	}
+
+	if (size != sizeof(__u64)) {
+		log_err("Expected an 8-byte integer, got %zu bytes.", size);
+		return -EINVAL;
+	}
 
 	tmp_config = kmalloc(sizeof(*tmp_config), GFP_KERNEL);
 	if (!tmp_config)
@@ -273,7 +283,7 @@ int pktqueue_set_config(struct pktqueue_config *new_config)
 	old_config = config;
 	*tmp_config = *old_config;
 
-	tmp_config->max_pkts = new_config->max_pkts;
+	tmp_config->max_pkts = *((__u64 *) value);
 
 	rcu_assign_pointer(config, tmp_config);
 	synchronize_rcu_bh();

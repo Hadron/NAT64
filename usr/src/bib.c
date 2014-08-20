@@ -13,6 +13,7 @@
 
 struct display_params {
 	bool numeric_hostname;
+	bool csv_format;
 	int row_count;
 	struct request_bib *req_payload;
 };
@@ -20,7 +21,7 @@ struct display_params {
 static int bib_display_response(struct nl_msg *msg, void *arg)
 {
 	struct nlmsghdr *hdr;
-	struct bib_entry_us *entries;
+	struct bib_entry_usr *entries;
 	struct display_params *params = arg;
 	__u16 entry_count, i;
 
@@ -28,27 +29,39 @@ static int bib_display_response(struct nl_msg *msg, void *arg)
 	entries = nlmsg_data(hdr);
 	entry_count = nlmsg_datalen(hdr) / sizeof(*entries);
 
-	for (i = 0; i < entry_count; i++) {
-		printf("[%s] ", entries[i].is_static ? "Static" : "Dynamic");
-		print_ipv4_tuple(&entries[i].ipv4, true);
-		printf(" - ");
-		print_ipv6_tuple(&entries[i].ipv6, params->numeric_hostname);
-		printf("\n");
+	if (params->csv_format) {
+		for (i = 0; i < entry_count; i++) {
+			printf("%s,", l4proto_to_string(params->req_payload->l4_proto));
+			print_ipv6_tuple(&entries[i].addr6, params->numeric_hostname, ",",
+					params->req_payload->l4_proto);
+			printf(",");
+			print_ipv4_tuple(&entries[i].addr4, true, ",", params->req_payload->l4_proto);
+			printf(",%u\n", entries[i].is_static);
+		}
+	} else {
+		for (i = 0; i < entry_count; i++) {
+			printf("[%s] ", entries[i].is_static ? "Static" : "Dynamic");
+			print_ipv4_tuple(&entries[i].addr4, true, "#", params->req_payload->l4_proto);
+			printf(" - ");
+			print_ipv6_tuple(&entries[i].addr6, params->numeric_hostname, "#",
+					params->req_payload->l4_proto);
+			printf("\n");
+		}
 	}
 
 	params->row_count += entry_count;
 
 	if (hdr->nlmsg_flags & NLM_F_MULTI) {
 		params->req_payload->display.iterate = true;
-		params->req_payload->display.ipv4.address = *(&entries[entry_count - 1].ipv4.address);
-		params->req_payload->display.ipv4.l4_id = *(&entries[entry_count - 1].ipv4.l4_id);
+		params->req_payload->display.addr4.address = *(&entries[entry_count - 1].addr4.address);
+		params->req_payload->display.addr4.l4_id = *(&entries[entry_count - 1].addr4.l4_id);
 	} else {
 		params->req_payload->display.iterate = false;
 	}
 	return 0;
 }
 
-static bool display_single_table(char *table_name, l4_protocol l4_proto, bool numeric_hostname)
+static bool display_single_table(l4_protocol l4_proto, bool numeric_hostname, bool csv_format)
 {
 	unsigned char request[HDR_LEN + PAYLOAD_LEN];
 	struct request_hdr *hdr = (struct request_hdr *) request;
@@ -56,16 +69,18 @@ static bool display_single_table(char *table_name, l4_protocol l4_proto, bool nu
 	struct display_params params;
 	bool error;
 
-	printf("%s:\n", table_name);
+	if (!csv_format)
+		printf("%s:\n", l4proto_to_string(l4_proto));
 
 	hdr->length = sizeof(request);
 	hdr->mode = MODE_BIB;
 	hdr->operation = OP_DISPLAY;
 	payload->l4_proto = l4_proto;
 	payload->display.iterate = false;
-	memset(&payload->display.ipv4, 0, sizeof(payload->display.ipv4));
+	memset(&payload->display.addr4, 0, sizeof(payload->display.addr4));
 
 	params.numeric_hostname = numeric_hostname;
+	params.csv_format = csv_format;
 	params.row_count = 0;
 	params.req_payload = payload;
 
@@ -75,7 +90,7 @@ static bool display_single_table(char *table_name, l4_protocol l4_proto, bool nu
 			break;
 	} while (params.req_payload->display.iterate);
 
-	if (!error) {
+	if (!csv_format && !error) {
 		if (params.row_count > 0)
 			printf("  (Fetched %u entries.)\n", params.row_count);
 		else
@@ -85,18 +100,21 @@ static bool display_single_table(char *table_name, l4_protocol l4_proto, bool nu
 	return error;
 }
 
-int bib_display(bool use_tcp, bool use_udp, bool use_icmp, bool numeric_hostname)
+int bib_display(bool use_tcp, bool use_udp, bool use_icmp, bool numeric_hostname, bool csv_format)
 {
 	int tcp_error = 0;
 	int udp_error = 0;
 	int icmp_error = 0;
 
+	if (csv_format)
+		printf("Protocol,IPv6 Address,IPv6 L4-ID,IPv4 Address,IPv4 L4-ID,Static?\n");
+
 	if (use_tcp)
-		tcp_error = display_single_table("TCP", L4PROTO_TCP, numeric_hostname);
+		tcp_error = display_single_table(L4PROTO_TCP, numeric_hostname, csv_format);
 	if (use_udp)
-		udp_error = display_single_table("UDP", L4PROTO_UDP, numeric_hostname);
+		udp_error = display_single_table(L4PROTO_UDP, numeric_hostname, csv_format);
 	if (use_icmp)
-		icmp_error = display_single_table("ICMP", L4PROTO_ICMP, numeric_hostname);
+		icmp_error = display_single_table(L4PROTO_ICMP, numeric_hostname, csv_format);
 
 	return (tcp_error || udp_error || icmp_error) ? -EINVAL : 0;
 }
@@ -172,8 +190,8 @@ static int bib_add_response(struct nl_msg *msg, void *arg)
 	return 0;
 }
 
-int bib_add(bool use_tcp, bool use_udp, bool use_icmp, struct ipv6_tuple_address *ipv6,
-		struct ipv4_tuple_address *ipv4)
+int bib_add(bool use_tcp, bool use_udp, bool use_icmp, struct ipv6_tuple_address *addr6,
+		struct ipv4_tuple_address *addr4)
 {
 	unsigned char request[HDR_LEN + PAYLOAD_LEN];
 	struct request_hdr *hdr = (struct request_hdr *) request;
@@ -182,8 +200,8 @@ int bib_add(bool use_tcp, bool use_udp, bool use_icmp, struct ipv6_tuple_address
 	hdr->length = sizeof(request);
 	hdr->mode = MODE_BIB;
 	hdr->operation = OP_ADD;
-	payload->add.ipv6 = *ipv6;
-	payload->add.ipv4 = *ipv4;
+	payload->add.addr6 = *addr6;
+	payload->add.addr4 = *addr4;
 
 	return exec_request(use_tcp, use_udp, use_icmp, hdr, payload, bib_add_response);
 }
@@ -194,7 +212,9 @@ static int bib_remove_response(struct nl_msg *msg, void *arg)
 	return 0;
 }
 
-int bib_remove_ipv6(bool use_tcp, bool use_udp, bool use_icmp, struct ipv6_tuple_address *ipv6)
+int bib_remove(bool use_tcp, bool use_udp, bool use_icmp,
+		bool addr6_set, struct ipv6_tuple_address *addr6,
+		bool addr4_set, struct ipv4_tuple_address *addr4)
 {
 	unsigned char request[HDR_LEN + PAYLOAD_LEN];
 	struct request_hdr *hdr = (struct request_hdr *) request;
@@ -203,23 +223,10 @@ int bib_remove_ipv6(bool use_tcp, bool use_udp, bool use_icmp, struct ipv6_tuple
 	hdr->length = sizeof(request);
 	hdr->mode = MODE_BIB;
 	hdr->operation = OP_REMOVE;
-	payload->remove.l3_proto = L3PROTO_IPV6;
-	payload->remove.ipv6 = *ipv6;
-
-	return exec_request(use_tcp, use_udp, use_icmp, hdr, payload, bib_remove_response);
-}
-
-int bib_remove_ipv4(bool use_tcp, bool use_udp, bool use_icmp, struct ipv4_tuple_address *ipv4)
-{
-	unsigned char request[HDR_LEN + PAYLOAD_LEN];
-	struct request_hdr *hdr = (struct request_hdr *) request;
-	struct request_bib *payload = (struct request_bib *) (request + HDR_LEN);
-
-	hdr->length = sizeof(request);
-	hdr->mode = MODE_BIB;
-	hdr->operation = OP_REMOVE;
-	payload->remove.l3_proto = L3PROTO_IPV4;
-	payload->remove.ipv4 = *ipv4;
+	payload->remove.addr6_set = addr6_set;
+	payload->remove.addr6 = *addr6;
+	payload->remove.addr4_set = addr4_set;
+	payload->remove.addr4 = *addr4;
 
 	return exec_request(use_tcp, use_udp, use_icmp, hdr, payload, bib_remove_response);
 }

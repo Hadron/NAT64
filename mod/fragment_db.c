@@ -676,7 +676,7 @@ int fragdb_init(void)
  * @param[out] clone a copy of the current config will be placed here. Must be already allocated.
  * @return zero on success, nonzero on failure.
  */
-int clone_fragmentation_config(struct fragmentation_config *clone)
+int fragmentdb_clone_config(struct fragmentation_config *clone)
 {
 	rcu_read_lock_bh();
 	*clone = *rcu_dereference_bh(config);
@@ -692,11 +692,26 @@ int clone_fragmentation_config(struct fragmentation_config *clone)
  * @param[in] new configuration values.
  * @return zero on success, nonzero on failure.
  */
-int set_fragmentation_config(__u32 operation, struct fragmentation_config *new_config)
+int fragmentdb_set_config(enum fragmentation_type type, size_t size, void *value)
 {
 	struct fragmentation_config *tmp_config;
 	struct fragmentation_config *old_config;
 	unsigned long fragment_min = msecs_to_jiffies(1000 * FRAGMENT_MIN);
+
+	if (type != FRAGMENT_TIMEOUT) {
+		log_err("Unknown config type for the 'fragment db' module: %u", type);
+		return -EINVAL;
+	}
+
+	if (size != sizeof(__u64)) {
+		log_err("Expected an 8-byte integer, got %zu bytes.", size);
+		return -EINVAL;
+	}
+
+	if (*((__u64 *) value) < fragment_min) {
+		log_err("The fragment timeout must be at least %u seconds.", FRAGMENT_MIN);
+		return -EINVAL;
+	}
 
 	tmp_config = kmalloc(sizeof(*tmp_config), GFP_KERNEL);
 	if (!tmp_config)
@@ -705,20 +720,11 @@ int set_fragmentation_config(__u32 operation, struct fragmentation_config *new_c
 	old_config = config;
 	*tmp_config = *old_config;
 
-	if (operation & FRAGMENT_TIMEOUT_MASK) {
-		if (new_config->fragment_timeout < fragment_min) {
-			log_err("The fragment timeout must be at least %u seconds.", FRAGMENT_MIN);
-			kfree(tmp_config);
-			return -EINVAL;
-		}
-
-		tmp_config->fragment_timeout = new_config->fragment_timeout;
-	}
+	tmp_config->fragment_timeout = *((__u64 *) value);
 
 	rcu_assign_pointer(config, tmp_config);
 	synchronize_rcu_bh();
 	kfree(old_config);
-
 	return 0;
 }
 

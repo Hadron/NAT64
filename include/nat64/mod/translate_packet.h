@@ -62,8 +62,8 @@ struct translation_steps {
 int translate_packet_init(void);
 void translate_packet_destroy(void);
 
-int clone_translate_config(struct translate_config *clone);
-int set_translate_config(__u32 operation, struct translate_config *new_config);
+int translate_clone_config(struct translate_config *clone);
+int translate_set_config(enum translate_type type, size_t size, void *value);
 
 verdict translating_the_packet(struct tuple *tuple, struct packet *in, struct packet **out);
 

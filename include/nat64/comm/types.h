@@ -24,27 +24,20 @@
 #endif
 #include "nat64/comm/nat64.h"
 
-
 /**
  * Returns nonzero if "status" is an error, returns zero if "status" represents success.
  *
  * This exists because if find stuff like this very baffling:
- * 		if (function_call()) {
+ * 		if (function_call())
  * 			log_err("Oh noes error");
- * 			return error;
- * 		}
  *
  * My common sense dictates that it should be like this:
- * 		if (!function_call()) {
+ * 		if (!function_call())
  * 			log_err("Oh noes error");
- * 			return error;
- * 		}
  *
  * Or at least this:
- * 		if (is_error(function_call())) {
+ * 		if (is_error(function_call()))
  * 			log_err("Oh noes error");
- * 			return error;
- * 		}
  */
 static inline bool is_error(int status)
 {
@@ -65,12 +58,6 @@ typedef enum l3_protocol {
 	L3PROTO_IPV4 = 1,
 #define L3_PROTO_COUNT 2
 } l3_protocol;
-
-/**
- * Returns a string version of "proto".
- * For debugging purposes really, but maybe we should use it more often during error messages.
- */
-char *l3proto_to_string(l3_protocol proto);
 
 /**
  * Transport (layer 4) protocols Jool is supposed to support.
@@ -99,12 +86,6 @@ typedef enum l4_protocol {
 	L4PROTO_ICMP = 3,
 #define L4_PROTO_COUNT 4
 } l4_protocol;
-
-/**
- * Returns a string version of "proto".
- * For debugging purposes really, but maybe we should use it more often during error messages.
- */
-char *l4proto_to_string(l4_protocol proto);
 
 /**
  * A layer-3 (IPv4) identifier attached to a layer-4 identifier (TCP port, UDP port or ICMP id).
@@ -144,7 +125,7 @@ struct ipv4_pair {
 struct ipv6_pair {
 	/** The NAT64's address and port being used in the connection. */
 	struct ipv6_tuple_address local;
-	/** Jool's address and port being used in the connection. */
+	/** The IPv6 node's address and port being used in the connection. */
 	struct ipv6_tuple_address remote;
 };
 
@@ -158,6 +139,11 @@ struct ipv6_prefix {
 	__u8 len;
 };
 
+/**
+ * TODO (fine) I don't think there's a reason for this to exist anymore.
+ * Also, see if ipv4_tuple_address and ipv6_tuple_address can also be removed,
+ * just for shits and giggles.
+ */
 struct tuple_addr {
 	union {
 		struct in_addr ipv4;
@@ -165,6 +151,5 @@ struct tuple_addr {
 	} addr;
 	__u16 l4_id;
 };
-
 
 #endif /* _JOOL_COMM_TYPES_H */
