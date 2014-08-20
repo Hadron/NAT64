@@ -1,5 +1,5 @@
-#ifndef _NF_NAT64_TRANSLATING_THE_PACKET_H
-#define _NF_NAT64_TRANSLATING_THE_PACKET_H
+#ifndef _JOOL_MOD_TRANSLATING_THE_PACKET_H
+#define _JOOL_MOD_TRANSLATING_THE_PACKET_H
 
 /**
  * @file
@@ -73,4 +73,4 @@ verdict translate(struct tuple *tuple, struct fragment *in, struct fragment **ou
 		struct translation_steps *steps);
 
 
-#endif /* _NF_NAT64_TRANSLATING_THE_PACKET_H */
+#endif /* _JOOL_MOD_TRANSLATING_THE_PACKET_H */

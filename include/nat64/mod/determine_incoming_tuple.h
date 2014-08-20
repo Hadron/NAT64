@@ -1,5 +1,5 @@
-#ifndef _NF_NAT64_DETERMINE_INCOMING_TUPLE_H
-#define _NF_NAT64_DETERMINE_INCOMING_TUPLE_H
+#ifndef _JOOL_MOD_INCOMING_H
+#define _JOOL_MOD_INCOMING_H
 
 /**
  * @file
@@ -18,4 +18,4 @@
 verdict determine_in_tuple(struct fragment *frag, struct tuple *tuple);
 
 
-#endif /* _NF_NAT64_DETERMINE_INCOMING_TUPLE_H */
+#endif /* _JOOL_MOD_INCOMING_H */

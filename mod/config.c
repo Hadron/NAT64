@@ -138,7 +138,7 @@ static int handle_pool6_config(struct nlmsghdr *nl_hdr, struct request_hdr *nat6
 
 		log_debug("Adding a prefix to the IPv6 pool.");
 
-		return respond_error(nl_hdr, pool6_add(&request->add.prefix));
+		return respond_error(nl_hdr, pool6_add(&request->update.prefix));
 
 	case OP_REMOVE:
 		if (verify_superpriv(nat64_hdr)) {
@@ -146,12 +146,12 @@ static int handle_pool6_config(struct nlmsghdr *nl_hdr, struct request_hdr *nat6
 		}
 
 		log_debug("Removing a prefix from the IPv6 pool.");
-		error = pool6_remove(&request->remove.prefix);
+		error = pool6_remove(&request->update.prefix);
 		if (error)
 			return respond_error(nl_hdr, error);
 
 		if (!request->flush.quick)
-			error = sessiondb_delete_by_ipv6_prefix(&request->remove.prefix);
+			error = sessiondb_delete_by_ipv6_prefix(&request->update.prefix);
 
 		return respond_error(nl_hdr, error);
 
@@ -519,8 +519,8 @@ static int handle_netlink_message(struct sk_buff *skb_in, struct nlmsghdr *nl_hd
 	void *request;
 	int error;
 
-	if (nl_hdr->nlmsg_type != MSG_TYPE_NAT64) {
-		log_debug("Expecting %#x but got %#x.", MSG_TYPE_NAT64, nl_hdr->nlmsg_type);
+	if (nl_hdr->nlmsg_type != MSG_TYPE_JOOL) {
+		log_debug("Expecting %#x but got %#x.", MSG_TYPE_JOOL, nl_hdr->nlmsg_type);
 		return -EINVAL;
 	}
 

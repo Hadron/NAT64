@@ -1,5 +1,5 @@
-#ifndef _NF_NAT64_ICMP_WRAPPER_H
-#define _NF_NAT64_ICMP_WRAPPER_H
+#ifndef _JOOL_MOD_ICMP_WRAPPER_H
+#define _JOOL_MOD_ICMP_WRAPPER_H
 
 #include "nat64/mod/packet.h"
 
@@ -37,4 +37,4 @@ void icmp64_send(struct fragment *frag, icmp_error_code code, __u32 info);
 void icmp64_send_skb(struct sk_buff *skb, icmp_error_code code, __u32 info);
 
 
-#endif /* _NF_NAT64_ICMP_WRAPPER_H */
+#endif /* _JOOL_MOD_ICMP_WRAPPER_H */

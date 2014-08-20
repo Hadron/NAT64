@@ -1,5 +1,5 @@
-#ifndef _NF_NAT64_PACKET_H
-#define _NF_NAT64_PACKET_H
+#ifndef _JOOL_MOD_PACKET_H
+#define _JOOL_MOD_PACKET_H
 
 #include <linux/skbuff.h>
 #include <linux/list.h>
@@ -371,4 +371,4 @@ static inline struct fragment *pkt_get_first_frag(struct packet *pkt)
 }
 
 
-#endif /* _NF_NAT64_PACKET_H */
+#endif /* _JOOL_MOD_PACKET_H */

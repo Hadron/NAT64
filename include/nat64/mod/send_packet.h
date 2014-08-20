@@ -1,5 +1,5 @@
-#ifndef _NF_NAT64_SEND_PACKET_H
-#define _NF_NAT64_SEND_PACKET_H
+#ifndef _JOOL_MOD_SEND_PACKET_H
+#define _JOOL_MOD_SEND_PACKET_H
 
 /**
  * @file
@@ -45,4 +45,4 @@ struct dst_entry *route_ipv6(struct ipv6hdr *hdr_ip, void *l4_hdr, l4_protocol l
 verdict send_pkt(struct packet *pkt);
 
 
-#endif /* _NF_NAT64_SEND_PACKET_H */
+#endif /* _JOOL_MOD_SEND_PACKET_H */

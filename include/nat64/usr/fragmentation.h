@@ -1,5 +1,5 @@
-#ifndef _FRAGMENTATION_H
-#define _FRAGMENTATION_H
+#ifndef _JOOL_USR_FRAGMENTATION_H
+#define _JOOL_USR_FRAGMENTATION_H
 
 #include <linux/types.h>
 #include "nat64/comm/config_proto.h"
@@ -10,5 +10,5 @@
 int fragmentation_request(__u32 operation, struct fragmentation_config *config);
 
 
-#endif /* _FRAGMENTATION_H */
+#endif /* _JOOL_USR_FRAGMENTATION_H */
 

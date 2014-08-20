@@ -1,5 +1,5 @@
-#ifndef _NF_NAT64_FRAGMENT_DB_H
-#define _NF_NAT64_FRAGMENT_DB_H
+#ifndef _JOOL_MOD_FRAGMENT_DB_H
+#define _JOOL_MOD_FRAGMENT_DB_H
 
 /**
  * @file
@@ -46,4 +46,4 @@ verdict fragment_arrives(struct sk_buff *skb, struct packet **result);
 void fragdb_destroy(void);
 
 
-#endif /* _NF_NAT64_FRAGMENT_DB_H */
+#endif /* _JOOL_MOD_FRAGMENT_DB_H */

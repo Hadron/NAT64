@@ -1,5 +1,5 @@
-#ifndef _NF_NAT64_HANDLING_HARPINNING_H
-#define _NF_NAT64_HANDLING_HARPINNING_H
+#ifndef _JOOL_MOD_HARPINNING_H
+#define _JOOL_MOD_HARPINNING_H
 
 /**
  * @file
@@ -19,4 +19,4 @@ bool is_hairpin(struct packet *pkt);
 verdict handling_hairpinning(struct packet *pkt_in, struct tuple *tuple_in);
 
 
-#endif /* _NF_NAT64_HANDLING_HARPINNING_H */
+#endif /* _JOOL_MOD_HARPINNING_H */
