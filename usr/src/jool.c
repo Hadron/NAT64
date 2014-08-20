@@ -44,6 +44,8 @@ struct arguments {
 	struct ipv6_prefix pool6_prefix;
 	bool pool6_prefix_set;
 
+	bool quick;
+
 	/* BIB, session */
 	bool tcp, udp, icmp;
 	bool static_entries, dynamic_entries;
@@ -78,10 +80,12 @@ enum argp_flags {
 	ARGP_COUNT = 'c',
 	ARGP_ADD = 'a',
 	ARGP_REMOVE = 'r',
+	ARGP_FLUSH = 'x',
 
 	/* Pools */
 	ARGP_PREFIX = 1000,
 	ARGP_ADDRESS = 1001,
+	ARGP_QUICK = 'q',
 
 	/* BIB, session */
 	ARGP_TCP = 't',
@@ -141,8 +145,11 @@ static struct argp_option options[] =
 	{ "count",		ARGP_COUNT,		NULL, 0, "(Operation) Print the number of IPv6 prefixes registered." },
 	{ "add",		ARGP_ADD,		NULL, 0, "(Operation) Add a prefix to the pool." },
 	{ "remove",		ARGP_REMOVE,	NULL, 0, "(Operation) Remove a prefix from the pool." },
-	{ "prefix",		ARGP_PREFIX,	PREFIX_FORMAT, 0,
-			"The prefix to be added or removed. Available on add and remove operations only." },
+	{ "flush",		ARGP_FLUSH,		NULL, 0, "(Operation) Flush all prefixes from the pool." },
+	{ "prefix",		ARGP_PREFIX,	PREFIX_FORMAT, 0, "The prefix to be added or removed. "
+			"Available on add and remove operations only." },
+	{ "quick",		ARGP_QUICK,		NULL, 0, "Do not clean the session tables after removing. "
+			"Available on remove and flush operations only. " },
 
 	{ NULL, 0, NULL, 0, "IPv4 Pool options:", 11 },
 	{ "pool4",		ARGP_POOL4,		NULL, 0, "The command will operate on the IPv4 pool." },
@@ -150,8 +157,12 @@ static struct argp_option options[] =
 	{ "count",		ARGP_COUNT,		NULL, 0, "(Operation) Print the number of IPv4 addresses registered." },
 	{ "add",		ARGP_ADD,		NULL, 0, "(Operation) Add an address to the pool." },
 	{ "remove",		ARGP_REMOVE,	NULL, 0, "(Operation) Remove an address from the pool." },
+	{ "flush",		ARGP_FLUSH,		NULL, 0, "(Operation) Flush all addresses from the pool." },
 	{ "address",	ARGP_ADDRESS,	IPV4_ADDR_FORMAT, 0,
 			"Address to be added or removed. Available on add and remove operations only." },
+	{ "quick",		ARGP_QUICK,		NULL, 0,
+			"Do not clean the BIB & session tables after removing."
+			"Available on remove and flush operations only. " },
 
 	{ NULL, 0, NULL, 0, "BIB options:", 20 },
 	{ "bib",		ARGP_BIB, 		NULL, 0, "The command will operate on BIBs." },
@@ -283,6 +294,9 @@ static int parse_opt(int key, char *arg, struct argp_state *state)
 	case ARGP_REMOVE:
 		arguments->operation = OP_REMOVE;
 		break;
+	case ARGP_FLUSH:
+		arguments->operation = OP_FLUSH;
+		break;
 
 	case ARGP_UDP:
 		arguments->udp = true;
@@ -304,6 +318,9 @@ static int parse_opt(int key, char *arg, struct argp_state *state)
 	case ARGP_PREFIX:
 		error = str_to_prefix(arg, &arguments->pool6_prefix);
 		arguments->pool6_prefix_set = true;
+		break;
+	case ARGP_QUICK:
+		arguments->quick = true;
 		break;
 	/*
 	case ARGP_STATIC:
@@ -491,7 +508,9 @@ static int main_wrapped(int argc, char **argv)
 				log_err("Please enter the prefix to be removed (--prefix).");
 				return -EINVAL;
 			}
-			return pool6_remove(&args.pool6_prefix);
+			return pool6_remove(&args.pool6_prefix, args.quick);
+		case OP_FLUSH:
+			return pool6_flush(args.quick);
 		default:
 			log_err("Unknown operation for IPv6 pool mode: %u.", args.operation);
 			return -EINVAL;
@@ -515,7 +534,9 @@ static int main_wrapped(int argc, char **argv)
 				log_err("Please enter the address to be removed (--address).");
 				return -EINVAL;
 			}
-			return pool4_remove(&args.pool4_addr);
+			return pool4_remove(&args.pool4_addr, args.quick);
+		case OP_FLUSH:
+			return pool4_flush(args.quick);
 		default:
 			log_err("Unknown operation for IPv4 pool mode: %u.", args.operation);
 			return -EINVAL;

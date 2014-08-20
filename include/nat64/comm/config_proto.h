@@ -39,6 +39,7 @@ enum config_operation {
 	OP_COUNT,
 	OP_ADD,
 	OP_REMOVE,
+	OP_FLUSH
 
 	/* The following apply when mode is filtering or translate. */
 	#define RESET_TCLASS_MASK		(1 << 2)
@@ -200,7 +201,14 @@ union request_pool6 {
 	} display;
 	struct {
 		struct ipv6_prefix prefix;
-	} update;
+	} add;
+	struct {
+		struct ipv6_prefix prefix;
+		__u8 quick;
+	} remove;
+	struct {
+		__u8 quick;
+	} flush;
 };
 
 union request_pool4 {
@@ -209,7 +217,14 @@ union request_pool4 {
 	} display;
 	struct {
 		struct in_addr addr;
-	} update;
+	} add;
+	struct {
+		struct in_addr addr;
+		__u8 quick;
+	} remove;
+	struct {
+		__u8 quick;
+	} flush;
 };
 
 struct request_bib {
