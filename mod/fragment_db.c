@@ -696,6 +696,8 @@ int fragmentdb_set_config(enum fragmentation_type type, size_t size, void *value
 {
 	struct fragmentation_config *tmp_config;
 	struct fragmentation_config *old_config;
+	__u64 value64;
+	__u32 max_u32 = 0xFFFFFFFFL; /* Max value in milliseconds */
 	unsigned long fragment_min = msecs_to_jiffies(1000 * FRAGMENT_MIN);
 
 	if (type != FRAGMENT_TIMEOUT) {
@@ -708,7 +710,14 @@ int fragmentdb_set_config(enum fragmentation_type type, size_t size, void *value
 		return -EINVAL;
 	}
 
-	if (*((__u64 *) value) < fragment_min) {
+	value64 = *((__u64 *) value);
+	if (value64 > max_u32) {
+		log_err("Expected a timeout less than %u seconds", max_u32 / 1000);
+		return -EINVAL;
+	}
+
+	value64 = msecs_to_jiffies(value64);
+	if (value64 < fragment_min) {
 		log_err("The fragment timeout must be at least %u seconds.", FRAGMENT_MIN);
 		return -EINVAL;
 	}
@@ -720,7 +729,7 @@ int fragmentdb_set_config(enum fragmentation_type type, size_t size, void *value
 	old_config = config;
 	*tmp_config = *old_config;
 
-	tmp_config->fragment_timeout = *((__u64 *) value);
+	tmp_config->fragment_timeout = value64;
 
 	rcu_assign_pointer(config, tmp_config);
 	synchronize_rcu_bh();

@@ -492,25 +492,30 @@ static int handle_netlink_message(struct sk_buff *skb_in, struct nlmsghdr *nl_hd
 
 	switch (nat64_hdr->mode) {
 	case MODE_POOL6:
-		error = handle_pool6_config(nl_hdr, nat64_hdr, request);
+		log_debug("mode_pool6");
+//		error = handle_pool6_config(nl_hdr, nat64_hdr, request);
 		break;
 	case MODE_POOL4:
-		error = handle_pool4_config(nl_hdr, nat64_hdr, request);
+		log_debug("mode_pool4");
+//		error = handle_pool4_config(nl_hdr, nat64_hdr, request);
 		break;
 	case MODE_BIB:
-		error = handle_bib_config(nl_hdr, nat64_hdr, request);
+		log_debug("mode_bib");
+//		error = handle_bib_config(nl_hdr, nat64_hdr, request);
 		break;
 	case MODE_SESSION:
-		error = handle_session_config(nl_hdr, nat64_hdr, request);
+		log_debug("mode_session");
+//		error = handle_session_config(nl_hdr, nat64_hdr, request);
 		break;
 	case MODE_GENERAL:
+		log_debug("mode_gral");
 		error = handle_general_config(nl_hdr, nat64_hdr, request);
 		break;
 	default:
 		log_err("Unknown configuration mode: %d", nat64_hdr->mode);
 		error = respond_error(nl_hdr, -EINVAL);
 	}
-
+	error = respond_error(nl_hdr, -EINVAL);
 	return error;
 }
 

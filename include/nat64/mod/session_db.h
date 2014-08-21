@@ -80,7 +80,7 @@ struct session_entry {
 	 * Transport protocol of the table this entry is in.
 	 * Used to know which table the session should be removed from when expired.
 	 */
-	const l4_protocol l4_proto;
+	l4_protocol l4_proto;
 
 	/** Current TCP state. Only relevant if l4_proto == L4PROTO_TCP. */
 	u_int8_t state;
@@ -283,6 +283,8 @@ void set_tcp_trans_timer(struct session_entry *session);
  * Marks "session" to be destroyed after the ICMP session lifetime has lapsed.
  */
 void set_icmp_timer(struct session_entry *session);
+
+int sessiondb_get_timeout(struct session_entry *session, unsigned long *result);
 
 
 #endif /* _JOOL_MOD_SESSION_DB_H */

@@ -26,7 +26,7 @@ static int handle_display_response(struct nl_msg *msg, void *arg)
 	print_time_friendly(conf->sessiondb.ttl.tcp_trans);
 	printf("ICMP session lifetime (--%s): ", ICMP_TIMEOUT_OPT);
 	print_time_friendly(conf->sessiondb.ttl.icmp);
-	printf("Fragments arrival time slot (%s): ", FRAGMENTATION_TIMEOUT_OPT);
+	printf("Fragments arrival time slot (--%s): ", FRAGMENTATION_TIMEOUT_OPT);
 	print_time_friendly(conf->fragmentation.fragment_timeout);
 
 	printf("Maximum number of stored packets (--%s): %llu\n", STORED_PKTS_OPT,

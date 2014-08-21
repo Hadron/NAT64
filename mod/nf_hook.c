@@ -4,6 +4,7 @@
 #include "nat64/mod/fragment_db.h"
 #include "nat64/mod/pool4.h"
 #include "nat64/mod/pool6.h"
+#include "nat64/mod/pkt_queue.h"
 #include "nat64/mod/bib_db.h"
 #include "nat64/mod/session_db.h"
 #include "nat64/mod/config.h"
@@ -15,6 +16,9 @@
 #include <linux/module.h>
 #include <linux/version.h>
 #include <linux/netfilter_ipv4.h>
+#include <linux/netfilter_ipv6.h>
+#include <net/netfilter/ipv6/nf_defrag_ipv6.h>
+#include <net/netfilter/ipv4/nf_defrag_ipv4.h>
 
 
 MODULE_LICENSE("GPL");
@@ -75,13 +79,13 @@ static struct nf_hook_ops nfho[] = {
 		.hook = hook_ipv6,
 		.hooknum = NF_INET_PRE_ROUTING,
 		.pf = PF_INET6,
-		.priority = NF_PRI_NAT64,
+		.priority = NF_PRI6_JOOL,
 	},
 	{
 		.hook = hook_ipv4,
 		.hooknum = NF_INET_PRE_ROUTING,
 		.pf = PF_INET,
-		.priority = NF_PRI_NAT64,
+		.priority = NF_PRI4_JOOL,
 	}
 };
 
@@ -108,6 +112,9 @@ static int __init nat64_init(void)
 	error = pool4_init(pool4, pool4_size);
 	if (error)
 		goto pool4_failure;
+	error = pktqueue_init();
+	if (error)
+		goto pktqueue_failure;
 	error = bibdb_init();
 	if (error)
 		goto bib_failure;
@@ -143,6 +150,9 @@ session_failure:
 	bibdb_destroy();
 
 bib_failure:
+	pktqueue_destroy();
+
+pktqueue_failure:
 	pool4_destroy();
 
 pool4_failure:
@@ -171,6 +181,7 @@ static void __exit nat64_exit(void)
 	filtering_destroy();
 	sessiondb_destroy();
 	bibdb_destroy();
+	pktqueue_destroy();
 	pool4_destroy();
 	pool6_destroy();
 	fragdb_destroy();

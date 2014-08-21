@@ -42,15 +42,15 @@
 
 enum config_mode {
 	/** The current message is talking about the IPv6 pool. */
-	MODE_POOL6 = (1 << 0),
+	MODE_POOL6 = (1 << 1),
 	/** The current message is talking about the IPv4 pool. */
-	MODE_POOL4 = (1 << 1),
+	MODE_POOL4 = (1 << 2),
 	/** The current message is talking about the Binding Information Bases. */
-	MODE_BIB = (1 << 2),
+	MODE_BIB = (1 << 3),
 	/** The current message is talking about the session tables. */
-	MODE_SESSION = (1 << 3),
-	/** The current message wants to change some general configuration value. */
-	MODE_GENERAL = 0,
+	MODE_SESSION = (1 << 4),
+	/** The current message is talking about general configuration values. */
+	MODE_GENERAL = (1 << 0),
 };
 
 #define POOL6_OPS (OP_DISPLAY | OP_COUNT | OP_ADD | OP_REMOVE)

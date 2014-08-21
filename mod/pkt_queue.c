@@ -1,6 +1,7 @@
 #include "nat64/mod/pkt_queue.h"
 #include "nat64/mod/icmp_wrapper.h"
 #include "nat64/mod/rbtree.h"
+#include "nat64/comm/constants.h"
 
 #include <linux/printk.h>
 #include <linux/timer.h>
@@ -230,7 +231,7 @@ int pktqueue_init(void)
 		kmem_cache_destroy(node_cache);
 		return -ENOMEM;
 	}
-
+	config->max_pkts = PKTQ_DEF_MAX_STORED_PKTS;
 	pkt_tree4 = RB_ROOT;
 
 	init_timer(&expire_timer);
